@@ -1,26 +1,34 @@
-name: CI
+name: Dependency Scan
+
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
   pull_request:
-    branches: [ "main" ]
-  workflow_dispatch:
+    branches:
+      - main
+
 jobs:
-  build-job:
+  dependency-scan:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-      - run: python3 -V
-  test-job:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: python3 teste.py
-      - uses: AppThreat/sast-scan-action@master
-        with:
-          type: "nodejs"
-  deploy-job:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: echo "Finalizado!"
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Audit dependencies
+      run: npm audit --audit-level=high
+
+    - name: Report audit results
+      if: failure()
+      run: |
+        echo "Dependencies with vulnerabilities detected!"
+        exit 1
